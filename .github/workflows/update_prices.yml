@@ -12,20 +12,23 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Fetch Silver
+      - name: Fetch Silver Data from Ardent
         run: |
-          # Fetching Silver from Ardent Insight
-          curl --retry 3 -sL "https://api.ardent-insight.com/v1/commodity/silver/buy" -o silver_buy.json
-          curl --retry 3 -sL "https://api.ardent-insight.com/v1/commodity/silver/sell" -o silver_sell.json
-          echo "{\"last_update\": \"$(date -u)\"}" > status.json
+          # Use -A to set a User-Agent and --retry to handle DNS hiccups (Exit Code 6)
+          curl -A "Silver-Tracker-Bot" --retry 5 --retry-delay 5 -sL "https://api.ardent-insight.com/v1/commodity/silver/buy" -o silver_buy.json
+          curl -A "Silver-Tracker-Bot" --retry 5 --retry-delay 5 -sL "https://api.ardent-insight.com/v1/commodity/silver/sell" -o silver_sell.json
+          
+          # Create status metadata for the website
+          echo "{\"last_update\": \"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\", \"source\": \"Ardent Insight\"}" > status.json
 
-      - name: Commit Data
+      - name: Save and Push Data
         run: |
-          git config --global user.name "COVAS-Bot"
-          git config --global user.email "bot@github.com"
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
           git add silver_buy.json silver_sell.json status.json
-          git commit -m "Market Sync Complete" || exit 0
+          # || exit 0 ensures the workflow stays green even if prices haven't changed
+          git commit -m "Sync Silver Market Data (Ardent Insight)" || exit 0
           git push
