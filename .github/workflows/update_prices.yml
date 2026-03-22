@@ -2,7 +2,7 @@ name: Ardent Data Sync
 
 on:
   schedule:
-    - cron: '*/30 * * * *' # Automatically runs every 30 minutes
+    - cron: '*/10 * * * *' # Automatically runs every 30 minutes
   push:
     branches: ["main"]   # Runs whenever you save changes
   workflow_dispatch:      # Gives you a manual "Run" button in GitHub Actions
