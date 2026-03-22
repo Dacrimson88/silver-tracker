@@ -1,34 +1,36 @@
-name: Fast Market Update
+name: Ardent Data Sync
 
 on:
-  workflow_dispatch:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '*/30 * * * *' # Updates every 30 mins
+  push:
+    branches: ["main"]
+  workflow_dispatch:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
-  update:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Fetch Silver Data from Ardent
+      - name: Fetch Market Data
         run: |
-          # Use -A to set a User-Agent and --retry to handle DNS hiccups (Exit Code 6)
-          curl -A "Silver-Tracker-Bot" --retry 5 --retry-delay 5 -sL "https://api.ardent-insight.com/v1/commodity/silver/buy" -o silver_buy.json
-          curl -A "Silver-Tracker-Bot" --retry 5 --retry-delay 5 -sL "https://api.ardent-insight.com/v1/commodity/silver/sell" -o silver_sell.json
-          
-          # Create status metadata for the website
-          echo "{\"last_update\": \"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\", \"source\": \"Ardent Insight\"}" > status.json
+          # We use curl to grab the raw data and save it as data.json
+          BUYS=$(curl -s https://ardent-industry.com/api/commodity/Silver/exporters)
+          SELLS=$(curl -s https://ardent-industry.com/api/commodity/Silver/importers)
+          echo "{\"buys\": $BUYS, \"sells\": $SELLS}" > data.json
 
-      - name: Save and Push Data
-        run: |
-          git config --global user.name "GitHub Action"
-          git config --global user.email "action@github.com"
-          git add silver_buy.json silver_sell.json status.json
-          # || exit 0 ensures the workflow stays green even if prices haven't changed
-          git commit -m "Sync Silver Market Data (Ardent Insight)" || exit 0
-          git push
+      - name: Upload Website Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
