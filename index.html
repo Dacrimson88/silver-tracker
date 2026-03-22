@@ -3,102 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ED Silver Tracker [TOP 20]</title>
+    <title>Silver Market HUD</title>
     <style>
-        :root { 
-            --orange: #ff7100; 
-            --blue: #00d4ff;
-            --green: #50ff50;
-            --dark: #050505; 
-            --row-hover: #1a1a1a; 
-        }
-
-        body { 
-            background: var(--dark); 
-            color: var(--orange); 
-            font-family: 'Segoe UI', Roboto, sans-serif; 
-            margin: 0; padding: 10px; 
-        }
-
-        .container { max-width: 900px; margin: auto; border: 1px solid var(--orange); padding: 10px; }
-        
-        header { 
-            border-bottom: 2px solid var(--orange); 
-            margin-bottom: 20px; 
-            padding-bottom: 10px; 
-            display: flex; justify-content: space-between; align-items: center;
-        }
-
-        h1 { text-transform: uppercase; letter-spacing: 2px; margin: 0; font-size: 1.1rem; }
-        .status { font-size: 0.7rem; opacity: 0.6; }
-
-        h2 { 
-            font-size: 0.8rem; text-transform: uppercase; padding: 8px; 
-            margin: 20px 0 10px 0; border-left: 4px solid var(--orange); background: #111;
-        }
+        :root { --orange: #ff7100; --blue: #00d4ff; --green: #50ff50; --dark: #050505; }
+        body { background: var(--dark); color: var(--orange); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 10px; }
+        .container { max-width: 800px; margin: auto; border: 1px solid var(--orange); padding: 15px; }
+        header { border-bottom: 2px solid var(--orange); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-end; }
+        h1 { text-transform: uppercase; letter-spacing: 2px; margin: 0; font-size: 1.2rem; }
+        .status { font-size: 0.7rem; opacity: 0.6; text-align: right; }
+        h2 { font-size: 0.8rem; text-transform: uppercase; background: #111; padding: 8px; margin: 20px 0 10px 0; border-left: 4px solid var(--orange); }
         .buy-h2 { border-color: var(--blue); color: var(--blue); }
         .sell-h2 { border-color: var(--green); color: var(--green); }
-
-        .table-wrapper { overflow-x: auto; width: 100%; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; min-width: 500px; }
-        
-        th { 
-            text-align: left; border-bottom: 1px solid #333; 
-            padding: 10px 5px; font-size: 0.65rem; opacity: 0.5; text-transform: uppercase;
-        }
-
-        td { padding: 12px 5px; border-bottom: 1px solid #1a1a1a; }
-        tr:hover { background: var(--row-hover); }
-
-        .station { color: #fff; font-weight: bold; display: block; font-size: 0.9rem; }
-        .system { font-size: 0.75rem; opacity: 0.7; }
-        .price { font-family: monospace; font-weight: bold; font-size: 1.1rem; text-align: right; }
-        .qty { text-align: center; font-family: monospace; color: #ccc; }
-        .label { font-size: 0.6rem; display: block; opacity: 0.5; }
-
-        .btn { 
-            background: var(--orange); color: black; border: none; padding: 15px; 
-            font-weight: bold; cursor: pointer; width: 100%; text-transform: uppercase; 
-        }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th { text-align: left; border-bottom: 1px solid #333; padding: 8px; font-size: 0.6rem; opacity: 0.5; }
+        td { padding: 10px 8px; border-bottom: 1px solid #1a1a1a; font-size: 0.85rem; }
+        .station { color: #fff; font-weight: bold; display: block; }
+        .system { font-size: 0.7rem; opacity: 0.7; }
+        .price { font-family: monospace; font-weight: bold; text-align: right; }
+        .qty { text-align: center; color: #aaa; font-size: 0.8rem; }
+        .btn { background: var(--orange); color: black; border: none; padding: 15px; width: 100%; font-weight: bold; text-transform: uppercase; cursor: pointer; }
     </style>
 </head>
 <body>
-
 <div class="container">
     <header>
         <h1>Silver Market HUD</h1>
-        <div class="status" id="update-time">SYNCING...</div>
+        <div class="status" id="update-time">AWAITING SYNC...</div>
     </header>
 
     <h2 class="buy-h2">Top 20 Buy Stations (Cheapest)</h2>
-    <div class="table-wrapper">
-        <table>
-            <thead>
-                <tr>
-                    <th>Station / System</th>
-                    <th style="text-align:center">Stock</th>
-                    <th style="text-align:right">Buy Price</th>
-                </tr>
-            </thead>
-            <tbody id="buy-table"></tbody>
-        </table>
-    </div>
+    <table>
+        <thead><tr><th>Station / System</th><th style="text-align:center">Stock</th><th style="text-align:right">Price</th></tr></thead>
+        <tbody id="buy-table"></tbody>
+    </table>
 
     <h2 class="sell-h2">Top 20 Sell Stations (Highest Profit)</h2>
-    <div class="table-wrapper">
-        <table>
-            <thead>
-                <tr>
-                    <th>Station / System</th>
-                    <th style="text-align:center">Demand</th>
-                    <th style="text-align:right">Sell Price</th>
-                </tr>
-            </thead>
-            <tbody id="sell-table"></tbody>
-        </table>
-    </div>
+    <table>
+        <thead><tr><th>Station / System</th><th style="text-align:center">Demand</th><th style="text-align:right">Price</th></tr></thead>
+        <tbody id="sell-table"></tbody>
+    </table>
 
-    <button class="btn" onclick="fetchData()">Manual Refresh UI</button>
+    <button class="btn" onclick="fetchData()">Refresh Terminal</button>
 </div>
 
 <script>
@@ -109,44 +54,26 @@
             if (!response.ok) throw new Error("AWAITING DATA.JSON");
             const data = await response.json();
 
-            // Render Buys (Top 20)
-            render(document.getElementById('buy-table'), data.buys, 'stock', 'var(--blue)');
-            
-            // Render Sells (Top 20)
-            render(document.getElementById('sell-table'), data.sells, 'demand', 'var(--green)');
+            renderTable('buy-table', data.buys, 'stock', 'var(--blue)');
+            renderTable('sell-table', data.sells, 'demand', 'var(--green)');
 
-            status.innerText = `LAST SYNC: ${new Date().toLocaleTimeString()}`;
+            status.innerText = `SYNC OK: ${new Date().toLocaleTimeString()}`;
         } catch (e) {
             status.innerText = e.message;
         }
     }
 
-    function render(container, list, qtyKey, priceColor) {
-        container.innerHTML = "";
-        if (!list) return;
-
-        // Take top 20
-        list.slice(0, 20).forEach(item => {
-            container.innerHTML += `
-                <tr>
-                    <td>
-                        <span class="station">${item.stationName}</span>
-                        <span class="system">${item.systemName}</span>
-                    </td>
-                    <td class="qty">
-                        ${(item[qtyKey] || 0).toLocaleString()}
-                        <span class="label">UNITS</span>
-                    </td>
-                    <td class="price" style="color: ${priceColor}">
-                        ${item.price.toLocaleString()}
-                        <span class="label">CREDITS</span>
-                    </td>
-                </tr>`;
-        });
+    function renderTable(id, list, qtyKey, color) {
+        const body = document.getElementById(id);
+        body.innerHTML = list ? list.slice(0, 20).map(item => `
+            <tr>
+                <td><span class="station">${item.stationName}</span><span class="system">${item.systemName}</span></td>
+                <td class="qty">${(item[qtyKey] || 0).toLocaleString()}</td>
+                <td class="price" style="color:${color}">${item.price.toLocaleString()} Cr</td>
+            </tr>
+        `).join('') : "<tr><td colspan='3'>No Data</td></tr>";
     }
-
     window.onload = fetchData;
 </script>
-
 </body>
 </html>
