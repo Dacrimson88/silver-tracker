@@ -1,42 +1,32 @@
-name: Ardent Data Sync
+name: Deploy to GitHub Pages
 
 on:
-  schedule:
-    - cron: '*/10 * * * *' # Automatically runs every 30 minutes
   push:
-    branches: ["main"]   # Runs whenever you save changes
-  workflow_dispatch:      # Gives you a manual "Run" button in GitHub Actions
+    branches: ["main"]
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
 jobs:
   deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Fetch Market Data
-        run: |
-          # We use curl to pull data for Silver directly into variables
-          # Then we echo them into a single data.json file
-          BUYS=$(curl -s "https://ardent-insight.com/api/commodity/Silver/exporters")
-          SELLS=$(curl -s "https://ardent-insight.com/api/commodity/Silver/importers")
-          
-          # Create the JSON structure the HTML is expecting
-          echo "{\"buys\": $BUYS, \"sells\": $SELLS}" > data.json
-          
-          # Debug: check if the file was created
-          ls -lh data.json
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
 
-      - name: Upload Website Artifact
+      - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: '.' # Source directory
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
