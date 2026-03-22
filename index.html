@@ -3,57 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CMDR Silver Tracker | Elite Dangerous</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>CMDR Silver Tracker</title>
     <style>
-        body { background-color: #121212; color: #e0e0e0; }
-        .card { background-color: #1e1e1e; border: 1px solid #333; color: white; }
-        .profit { color: #00ff88; font-weight: bold; }
-        .silver-header { border-bottom: 2px solid #ff7b00; padding-bottom: 10px; }
+        :root { 
+            --ed-orange: #ffad22; 
+            --ed-orange-dim: rgba(255, 173, 34, 0.2);
+            --ed-low: #00e5ff; /* Cyan for Buying */
+            --ed-high: #ff4500; /* Red-Orange for Selling */
+            --bg: #0b0b0b; 
+            --card: #161616; 
+        }
+
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: var(--bg); 
+            color: var(--ed-orange); 
+            padding: 15px; 
+            margin: 0; 
+            text-transform: uppercase;
+        }
+
+        /* Scanline Effect */
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 4px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .header { border-bottom: 2px solid var(--ed-orange); padding-bottom: 10px; margin-bottom: 20px; }
+        
+        .section-header { 
+            font-size: 0.9em; 
+            font-weight: bold; 
+            margin: 25px 0 10px; 
+            padding: 5px 10px; 
+            background: var(--ed-orange-dim); 
+            border-left: 4px solid var(--ed-orange); 
+        }
+        
+        .card { 
+            background: var(--card); 
+            padding: 15px; 
+            margin-bottom: 12px; 
+            border-radius: 2px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border: 1px solid #333; 
+        }
+
+        .buy-card { border-right: 4px solid var(--ed-low); }
+        .sell-card { border-right: 4px solid var(--ed-high); }
+        
+        .system { font-weight: bold; font-size: 1.2em; color: #fff; }
+        .station { color: #888; font-size: 0.8em; margin-top: 2px; }
+        
+        .price { font-size: 1.4em; font-weight: bold; font-family: monospace; }
+        .buy-price { color: var(--ed-low); }
+        .sell-price { color: var(--ed-high); }
+        
+        .qty { font-size: 0.7em; color: #aaa; text-align: right; margin-top: 4px; }
+        
+        .copy-btn { 
+            background: transparent; 
+            color: var(--ed-orange); 
+            border: 1px solid var(--ed-orange); 
+            padding: 5px 10px; 
+            cursor: pointer; 
+            font-size: 0.7em; 
+            margin-top: 10px; 
+            font-weight: bold; 
+        }
+        
+        .copy-btn:hover { background: var(--ed-orange); color: #000; }
+        #status { font-size: 0.7em; color: #444; margin-top: 5px; font-family: monospace; }
     </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h1 class="silver-header text-center mb-4">🥈 Elite Silver Market Hub</h1>
-        
-        <div class="row g-4">
-            <div class="col-md-6">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title text-info">Best Buy (Supply)</h5>
-                        <div id="buy-list">Loading market data...</div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="col-md-6">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title text-success">Best Sell (Demand)</h5>
-                        <div id="sell-list">Connecting to EDDN...</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <footer class="mt-5 text-center text-muted">
-            <small>Data synced via EDDN Relay • 2026 Fleet Logistics</small>
-        </footer>
+    <div class="header">
+        <h2>> SILVER_MARKET_SYNC</h2>
+        <div id="status">INITIATING COVAS LINK...</div>
     </div>
 
+    <div class="section-header">TOP SUPPLY (BUY LOW)</div>
+    <div id="buy-list">SCANNING...</div>
+
+    <div class="section-header">TOP DEMAND (SELL HIGH)</div>
+    <div id="sell-list">SCANNING...</div>
+
     <script>
-        // Placeholder for data fetching logic
-        // In a real app, you'd fetch from an API like: https://eddbapi.com/v4/commodities/silver
-        async function updateMarket() {
-            console.log("Fetching latest Silver prices...");
-            // Example data structure
-            const mockData = [
-                { station: "Ray Gateway", system: "Diaguandri", price: 34000, type: "buy" },
-                { station: "Titan's Daughter", system: "Taygeta", price: 485000, type: "sell" }
-            ];
-            // You would map this data to the HTML elements here
+        function copySystem(text, btn) {
+            navigator.clipboard.writeText(text);
+            btn.innerText = "COPIED TO NAV";
+            setTimeout(() => btn.innerText = "COPY SYSTEM", 1000);
         }
-        updateMarket();
+
+        async function loadMarket() {
+            try {
+                const [buyRes, sellRes, statusRes] = await Promise.all([
+                    fetch('silver_buy.json').then(r => r.json()),
+                    fetch('silver_sell.json').then(r => r.json()),
+                    fetch('status.json').then(r => r.json())
+                ]);
+
+                document.getElementById('status').innerText = "DATA RECEIVED // TIMESTAMP: " + statusRes.last_update;
+
+                const render = (data, type) => {
+                    return data.slice(0, 5).map(item => `
+                        <div class="card ${type}-card">
+                            <div>
+                                <div class="system">${item.systemName}</div>
+                                <div class="station">${item.stationName} // ${item.arrivalDistance} LS</div>
+                                <button class="copy-btn" onclick="copySystem('${item.systemName}', this)">COPY SYSTEM</button>
+                            </div>
+                            <div style="text-align: right;">
+                                <div class="price ${type}-price">${(type === 'buy' ? item.buyPrice : item.sellPrice).toLocaleString()} CR</div>
+                                <div class="qty">${type === 'buy' ? 'SUPPLY' : 'DEMAND'}: ${item.supply || item.demand} UNITS</div>
+                            </div>
+                        </div>
+                    `).join('');
+                };
+
+                document.getElementById('buy-list').innerHTML = render(buyRes, 'buy');
+                document.getElementById('sell-list').innerHTML = render(sellRes, 'sell');
+
+            } catch (err) {
+                document.getElementById('buy-list').innerHTML = `<div style="color:var(--ed-high); padding: 20px;">ERR: MARKET_DATA_NULL. RUN GITHUB ACTION.</div>`;
+            }
+        }
+        loadMarket();
     </script>
 </body>
 </html>
