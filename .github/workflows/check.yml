@@ -1,0 +1,16 @@
+name: Hourly Silver Check
+on:
+  schedule:
+    - cron: '0 * * * *' # Runs every hour
+  workflow_dispatch:    # Allows you to trigger it manually from the app
+jobs:
+  run-tracker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - run: pip install yfinance
+      - run: python tracker.py
